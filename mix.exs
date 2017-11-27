@@ -43,6 +43,7 @@ defmodule StreamData.Mixfile do
 
   defp deps() do
     [
+      {:propcheck, "~> 1.0", only: :test},
       {:ex_doc, "~> 0.15", only: :dev}
     ]
   end
