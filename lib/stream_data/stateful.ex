@@ -4,6 +4,19 @@ defmodule StreamData.Stateful do
   import StreamData
 # import Commander.Command
 
+  defmacro symcall({{:., _, [mod, fun]}, _, args}) do
+    quote do
+      {:call, unquote(mod), unquote(fun), unquote(args)}
+    end
+  end
+  defmacro symcall({fun, _, args}) do
+    quote do
+      {:call, __MODULE__, unquote(fun), unquote(args)}
+    end
+  end
+
+
+  # TODO verify these
   @type args :: [any]
   @type symstate :: any
   @type runstate :: any
@@ -17,7 +30,7 @@ defmodule StreamData.Stateful do
 
   @type driver :: module
 
-  defmodule RawDriver do
+  defmodule Driver do
     alias Stateful, as: St
 
     @callback gen_call(St.symstate) :: St.symcall
@@ -31,37 +44,6 @@ defmodule StreamData.Stateful do
     @callback post!(St.runstate, St.symcall, St.ret) :: none | no_return
   end
 
-  #defmodule CommandDriver do
-    #@behavior RawDriver
-
-    #@spec gen_cmd(symstate) :: command
-
-    #@spec pre!(symstate, symcall) :: none | no_return
-
-    #@callback next(symstate | runstate, symcall, symret | ret) :: symstate | runstate
-
-    #@callback post!(runstate, symcall, ret) :: none | no_return
-
-    #def gen_call(symstate) do
-      #gen_cmd(symstat)
-    #end
-
-    #def pre!(symstate, symcall) :: none | no_return
-
-    #@callback next(symstate | runstate, symcall, symret | ret) :: symstate | runstate
-
-    #@callback post!(runstate, symcall, ret) :: none | no_return
-  #end
-
-# @spec generate(module, {gen_state, exec_state}) :: StreamData.t([symcall])
-# def generate(driver, initial_states) do
-#   # such that -> is that the shrinker validation?
-#   sized(fn size -> do
-#       list_of(generate(size, driver, initial_states, 1))
-#   end)
-#   |> filter(&valid_cmds?(&1, initial_state))
-# end
-
 # @spec gen_commands(module, {gen_state, exec_state}) :: StreamData.t([symcall])
 
   @spec gen_commands(module) :: StreamData.t([symcall])
@@ -72,25 +54,20 @@ defmodule StreamData.Stateful do
   # TODO shrinking doesn't seem to work
   @spec gen_commands(module, symstate | symcall) :: StreamData.t([symcall])
   def gen_commands(driver, init_symstate) do
-    # TODO should the argument here be a symcall or a StreamData.t(symcall?)
-    #bind(init_symstate, fn symstate ->
-      bind(
-        sized(fn size ->
-          gen_commands(size, driver, init_symstate, 1)
-          # TODO
-          |> filter(&valid_cmds?(driver, &1, init_symstate))
-        end), fn cmds ->
-          #IO.inspect(cmds, pretty: true)
-          constant([{:init, init_symstate} | cmds])
-        end)
-    #end)
+    bind(
+      sized(fn size ->
+        gen_commands(size, driver, init_symstate, 1)
+        |> filter(&valid_cmds?(driver, &1, init_symstate))
+      end), fn cmds ->
+        constant([{:init, init_symstate} | cmds])
+      end)
   end
 
   # :: StreamData.t([symcall])
-  def gen_commands(1, driver, symstate, step) do
+  defp gen_commands(1, driver, symstate, step) do
     constant([])
   end
-  def gen_commands(size, driver, symstate, step) do
+  defp gen_commands(size, driver, symstate, step) do
     bind_filter(
       driver.gen_command(symstate),
       fn symcall ->
@@ -129,7 +106,7 @@ defmodule StreamData.Stateful do
   Turns pre! into a boolean predicate (only for assert related errors).
   """
   @spec pre?(driver, symstate, symcall) :: boolean
-  def pre?(driver, symstate, symcall) do
+  defp pre?(driver, symstate, symcall) do
     try do
       driver.pre!(symstate, symcall)
       true
@@ -194,23 +171,14 @@ defmodule StreamData.Stateful do
     end
   end
   def eval(env, tuple) when is_tuple(tuple) do
-    List.to_tuple(eval(env, Tuple.to_list(tuple)))
+    eval(env, Tuple.to_list(tuple))
+    |> List.to_tuple
   end
+  # TODO maps
   def eval(_, term) do 
     term
   end
 
-
-  defmacro symcall({{:., _, [mod, fun]}, _, args}) do
-    quote do
-      {:call, unquote(mod), unquote(fun), unquote(args)}
-    end
-  end
-  defmacro symcall({fun, _, args}) do
-    quote do
-      {:call, __MODULE__, unquote(fun), unquote(args)}
-    end
-  end
 
 end
 
