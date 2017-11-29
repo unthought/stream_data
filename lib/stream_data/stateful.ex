@@ -15,6 +15,17 @@ defmodule StreamData.Stateful do
     end
   end
 
+  defmacro gen_symcall({{:., _, [mod, fun]}, _, args}) do
+    quote do
+      {:call, unquote(mod), unquote(fun), StreamData.fixed_list(unquote(args))}
+    end
+  end
+  defmacro gen_symcall({fun, _, args}) do
+    quote do
+      {:call, __MODULE__, unquote(fun), StreamData.fixed_list(unquote(args))}
+    end
+  end
+
 
   # TODO verify these
   @type args :: [any]

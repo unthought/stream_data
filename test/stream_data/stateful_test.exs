@@ -1,6 +1,6 @@
 defmodule StreamData.Stateful.ClassicPdictTest do
   @moduledoc """
-  implements the classic pdict property check.
+  implements the pdict property check in classic style.
   """
 
   use ExUnit.Case, async: true
