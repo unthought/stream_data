@@ -75,9 +75,12 @@ defmodule StreamData.Stateful do
           var = {:var, step}
           next_gen_state = driver.next(symstate, symcall, var)
 
-          cmds = bind(gen_commands(size - 1, driver, next_gen_state, step + 1), fn tail ->
-            constant([{:set, var, symcall} | tail])
-          end)
+          cmds = 
+            bind(
+              gen_commands(size - 1, driver, next_gen_state, step + 1),
+              fn tail ->
+                constant([{:set, var, symcall} | tail])
+              end)
           {:cont, cmds}
         else
           :skip
