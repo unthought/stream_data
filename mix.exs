@@ -9,6 +9,10 @@ defmodule StreamData.Mixfile do
       app: :stream_data,
       version: @version,
       elixir: "~> 1.5",
+      elixirc_paths: case Mix.env do
+        :test -> ["lib", "test/support"]
+        _     -> ["lib"]
+      end,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
 
@@ -32,7 +36,7 @@ defmodule StreamData.Mixfile do
 
   def application() do
     [
-      extra_applications: [],
+      extra_applications: [:logger],
       env: [
         initial_size: 1,
         max_runs: 100,
@@ -40,10 +44,13 @@ defmodule StreamData.Mixfile do
       ]
     ]
   end
+  
+  # Specifies which paths to compile per environment
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_),     do: ["lib"]
 
   defp deps() do
     [
-      {:propcheck, "~> 1.0", only: :test},
       {:ex_doc, "~> 0.15", only: :dev}
     ]
   end
