@@ -23,8 +23,8 @@ defmodule StreamData.Stateful.ClassicPingPongTest do
         PingPongMaster.start_link()
         #:ok = :sys.trace(PingPongMaster, true)
        #r = run_commands(__MODULE__, cmds)
-        {r, _env} = run_commands(__MODULE__, cmds)
-        {history, state, result} = r
+        {_r, _env} = run_commands(__MODULE__, cmds)
+        #{history, state, result} = r
         PingPongMaster.stop
         wait_for_master_to_stop()
         #IO.puts "Property finished. result is: #{inspect r}"
